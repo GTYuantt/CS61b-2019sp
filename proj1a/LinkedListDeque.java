@@ -28,7 +28,7 @@ public class LinkedListDeque<T> {
         this();
         TNode p=other.Sentinel.next;
         for(int i=0;i<other.size;i++){
-            this.addLast(p.item);
+            this.addLast((T)p.item);  //cause we don't know the type of the items in other, so we need to cast it into T
             p=p.next;
         }
     }
