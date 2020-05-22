@@ -98,24 +98,27 @@ public class IntList {
 
         IntList p = new IntList();
         IntList p1 = p;
-
-        while (A.rest != null) {
+        if (A != null) {
+            while (A.rest != null) {
+                p1.first = A.first;
+                p1.rest = new IntList();
+                p1 = p1.rest;
+                A = A.rest;
+            }
             p1.first = A.first;
             p1.rest = new IntList();
             p1 = p1.rest;
             A = A.rest;
         }
-        p1.first = A.first;
-        p1.rest = new IntList();
-        p1 = p1.rest;
-        A = A.rest;
-        while (B.rest != null) {
+        if (B != null) {
+            while (B.rest != null) {
+                p1.first = B.first;
+                p1.rest = new IntList();
+                p1 = p1.rest;
+                B = B.rest;
+            }
             p1.first = B.first;
-            p1.rest = new IntList();
-            p1 = p1.rest;
-            B = B.rest;
         }
-        p1.first = B.first;
         return p;
     }
 
