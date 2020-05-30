@@ -10,6 +10,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 
+import static huglife.HugLifeUtils.randomEntry;
+
 /**
  * An implementation of a motile pacifist photosynthesizer.
  *
@@ -29,6 +31,19 @@ public class Plip extends Creature {
      * blue color.
      */
     private int b;
+
+    /**
+     * fraction of energy to retain when replicating.
+     */
+    private double repEnergyRetained = 0.5;
+    /**
+     * fraction of energy to give to offspring.
+     */
+    private double repEnergyGiven = 0.5;
+    /**
+     * probability of taking a move when ample space available.
+     */
+    private double moveProbability = 0.5;
 
     /**
      * creates plip with energy equal to E.
@@ -57,7 +72,9 @@ public class Plip extends Creature {
      * that you get this exactly correct.
      */
     public Color color() {
-        g = 63;
+        r = 99;
+        g = (int) (63 + 96 * energy);
+        b = 76;
         return color(r, g, b);
     }
 
@@ -75,6 +92,10 @@ public class Plip extends Creature {
      */
     public void move() {
         // TODO
+        energy = energy - 0.15;
+        if (energy < 0){
+            energy = 0;
+        }
     }
 
 
@@ -83,6 +104,10 @@ public class Plip extends Creature {
      */
     public void stay() {
         // TODO
+        energy = energy + 0.2;
+        if (energy > 2) {
+            energy = 2;
+        }
     }
 
     /**
@@ -91,7 +116,9 @@ public class Plip extends Creature {
      * Plip.
      */
     public Plip replicate() {
-        return this;
+        double babyenergy = energy * repEnergyGiven;
+        energy = energy * repEnergyRetained;
+        return new Plip(babyenergy);
     }
 
     /**
@@ -114,17 +141,32 @@ public class Plip extends Creature {
         // TODO
         // (Google: Enhanced for-loop over keys of NEIGHBORS?)
         // for () {...}
-
-        if (false) { // FIXME
-            // TODO
+        for(Direction d : neighbors.keySet()){
+            if (neighbors.get(d).name().equals("empty")) {
+                emptyNeighbors.add(d);
+            }
         }
-
+        if (emptyNeighbors.isEmpty()) {
+            return new Action(Action.ActionType.STAY);
+        }
         // Rule 2
         // HINT: randomEntry(emptyNeighbors)
-
+        else if (energy >= 1){
+            return new Action(Action.ActionType.REPLICATE, randomEntry(emptyNeighbors));
+        }
         // Rule 3
-
+        else if ((neighbors.get(Direction.TOP).name().equals("clorus")||
+                neighbors.get(Direction.BOTTOM).name().equals("clorus")||
+                neighbors.get(Direction.LEFT).name().equals("clorus")||
+                neighbors.get(Direction.RIGHT).name().equals("clorus"))&&
+                Math.random() < moveProbability){
+            return new Action(Action.ActionType.MOVE, randomEntry(emptyNeighbors));
+        }
         // Rule 4
-        return new Action(Action.ActionType.STAY);
+        else {
+            return new Action(Action.ActionType.STAY);
+        }
+
+
     }
 }
