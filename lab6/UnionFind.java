@@ -66,9 +66,11 @@ public class UnionFind {
         }
         if (sizeV1 <= sizeV2){
             parent[rootOfV1] = rootOfV2;
+            parent[rootOfV2] = -(sizeV1 + sizeV2);
         }
         else {
             parent[rootOfV2] = rootOfV1;
+            parent[rootOfV1] = -(sizeV1 + sizeV2);
         }
     }
 
