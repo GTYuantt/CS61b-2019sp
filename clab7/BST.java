@@ -246,4 +246,20 @@ public class BST<Key extends Comparable<Key>> {
     private boolean isEmpty() {
         return size() == 0;
     }
+
+    /**
+     * computes the average depth of the tree.
+     */
+    public double AverageDepth(){
+        return AverageDepth(root);
+    }
+
+    private double AverageDepth(Node n){
+        if(n == null){
+            return 0;
+        }
+        return ((1+AverageDepth(n.left))*size(n.left)+
+                (1+AverageDepth(n.right))*size(n.right))/size(n);
+    }
+
 }
