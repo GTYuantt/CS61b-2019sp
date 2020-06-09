@@ -1,9 +1,16 @@
+
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**
  * A String-like class that allows users to add and remove characters in the String
  * in constant time and have a constant-time hash function. Used for the Rabin-Karp
  * string-matching algorithm.
  */
 class RollingString{
+
+    private int length;
+    private Queue<Character> rollingString;
 
     /**
      * Number of total possible int values a character can take on.
@@ -24,6 +31,12 @@ class RollingString{
     public RollingString(String s, int length) {
         assert(s.length() == length);
         /* FIX ME */
+        this.length = length;
+        rollingString = new LinkedList<>() ;
+        for (int i = 0;i < length;i++){
+            char c = s.charAt(i);
+            rollingString.add(c);
+        }
     }
 
     /**
@@ -33,6 +46,8 @@ class RollingString{
      */
     public void addChar(char c) {
         /* FIX ME */
+        rollingString.add(c);
+        rollingString.remove();
     }
 
 
@@ -44,7 +59,11 @@ class RollingString{
     public String toString() {
         StringBuilder strb = new StringBuilder();
         /* FIX ME */
-        return "";
+        for (char c:rollingString){
+            strb.append(c);
+        }
+        String toReturn = strb.toString();
+        return toReturn;
     }
 
     /**
@@ -53,7 +72,7 @@ class RollingString{
      */
     public int length() {
         /* FIX ME */
-        return -1;
+        return length;
     }
 
 
@@ -65,7 +84,20 @@ class RollingString{
     @Override
     public boolean equals(Object o) {
         /* FIX ME */
-        return false;
+        if(this == o){
+            return true;
+        }
+        if(o == null){
+            return false;
+        }
+        if (o.getClass() != this.getClass()){
+            return false;
+        }
+        RollingString s = (RollingString) o;
+        if(s.length != this.length){
+            return false;
+        }
+        return this.toString().equals(s.toString());
     }
 
     /**
@@ -74,7 +106,11 @@ class RollingString{
      */
     @Override
     public int hashCode() {
-        /* FIX ME */
-        return -1;
+        int hashCode = 0;
+        for (char c:rollingString){
+            hashCode = hashCode * UNIQUECHARS + c;
+        }
+        hashCode = hashCode % PRIMEBASE;
+        return hashCode;
     }
 }
