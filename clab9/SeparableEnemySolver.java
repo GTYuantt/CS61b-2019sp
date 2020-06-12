@@ -24,7 +24,40 @@ public class SeparableEnemySolver {
      */
     public boolean isSeparable() {
         // TODO: Fix me
-        return false;
+
+        Set<String> label = g.labels();
+
+        for (String source:label){
+            Queue<String> fringe = new LinkedList<>();
+            Map<String,Boolean> mark = new HashMap<>();
+            Map<String,Integer> group = new HashMap<>();
+            for (String s:label){
+                mark.put(s,false);
+                group.put(s,0);
+            }
+            fringe.add(source);
+            group.put(source,1);
+            mark.put(source,true);
+            while (!fringe.isEmpty()){
+                String vertice = fringe.remove();
+                Set<String> neighbors = g.neighbors(vertice);
+                for (String neighbor: neighbors){
+                    if(!mark.get(neighbor)) {
+                        fringe.add(neighbor);
+                        mark.put(neighbor,true);
+                        group.put(neighbor,-group.get(vertice));
+                    } else {
+                        if(group.get(vertice)==group.get(neighbor)){
+                            return false;
+                        }
+                    }
+                }
+            }
+
+        }
+
+        return true;
+
     }
 
 
