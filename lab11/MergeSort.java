@@ -1,3 +1,4 @@
+import com.sun.corba.se.impl.oa.toa.TOA;
 import edu.princeton.cs.algs4.Queue;
 
 public class MergeSort {
@@ -43,7 +44,13 @@ public class MergeSort {
     private static <Item extends Comparable> Queue<Queue<Item>>
             makeSingleItemQueues(Queue<Item> items) {
         // Your code here!
-        return null;
+        Queue<Queue<Item>> toReturn = new Queue<>();
+        for (Item i:items){
+            Queue<Item> itemQueue = new Queue<>();
+            itemQueue.enqueue(i);
+            toReturn.enqueue(itemQueue);
+        }
+        return toReturn;
     }
 
     /**
@@ -62,7 +69,12 @@ public class MergeSort {
     private static <Item extends Comparable> Queue<Item> mergeSortedQueues(
             Queue<Item> q1, Queue<Item> q2) {
         // Your code here!
-        return null;
+        Queue<Item> toReturn = new Queue<>();
+        while(!(q1.isEmpty()&&q2.isEmpty())){
+            Item minItem = getMin(q1, q2);
+            toReturn.enqueue(minItem);
+        }
+        return toReturn;
     }
 
     /**
@@ -78,6 +90,16 @@ public class MergeSort {
     public static <Item extends Comparable> Queue<Item> mergeSort(
             Queue<Item> items) {
         // Your code here!
-        return items;
+        if (items.size() == 0){
+            return items;
+        }
+        Queue<Queue<Item>> singleItemQueues = makeSingleItemQueues(items);
+        while (singleItemQueues.size()>1){
+            Queue<Item> q1 = singleItemQueues.dequeue();
+            Queue<Item> q2 = singleItemQueues.dequeue();
+            Queue<Item> mergedQ = mergeSortedQueues(q1, q2);
+            singleItemQueues.enqueue(mergedQ);
+        }
+        return singleItemQueues.dequeue();
     }
 }
