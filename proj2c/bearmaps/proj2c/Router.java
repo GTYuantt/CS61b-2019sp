@@ -1,7 +1,10 @@
 package bearmaps.proj2c;
 
-import java.util.List;
-import java.util.Objects;
+import bearmaps.hw4.WeightedEdge;
+import bearmaps.hw4.WeirdSolver;
+import bearmaps.hw4.streetmap.Node;
+
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,10 +27,9 @@ public class Router {
      */
     public static List<Long> shortestPath(AugmentedStreetMapGraph g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        //long src = g.closest(stlon, stlat);
-        //long dest = g.closest(destlon, destlat);
-        //return new WeirdSolver<>(g, src, dest, 20).solution();
-        return null;
+        long src = g.closest(stlon, stlat);
+        long dest = g.closest(destlon, destlat);
+        return new WeirdSolver<>(g, src, dest, 20).solution();
     }
 
     /**
@@ -40,8 +42,90 @@ public class Router {
      */
     public static List<NavigationDirection> routeDirections(AugmentedStreetMapGraph g, List<Long> route) {
         /* fill in for part IV */
-        return null;
+        List<NavigationDirection> toReturn = new ArrayList<>();
+        Queue<Long> routeQ = new LinkedList<>();
+        for(long vertex:route){
+            routeQ.add(vertex);
+        }
+        Map<Long, WeightedEdge<Long>> adjEdge = getWays(g,route);
+
+        long curVertex = routeQ.remove();
+        long nextVertex = routeQ.remove();
+        WeightedEdge<Long> curEdge = adjEdge.get(curVertex);
+        WeightedEdge<Long> nextEdge = adjEdge.get(nextVertex);
+        double distance = curEdge.weight();
+        String way = curEdge.getName();
+        int direction = 0;
+        if(nextEdge == null){
+            NavigationDirection nd = Router.setNavDirection(direction,way,distance);
+            toReturn.add(nd);
+            return toReturn;
+        }
+        if(!curEdge.getName().equals(nextEdge.getName())){
+            NavigationDirection nd = Router.setNavDirection(direction,way,distance);
+            toReturn.add(nd);
+            double curBearing = NavigationDirection.bearing(g.lon(curEdge.from()),g.lon(curEdge.to()),g.lat(curEdge.from()),g.lat(curEdge.to()));
+            double nextBearing = NavigationDirection.bearing(g.lon(nextEdge.from()),g.lon(nextEdge.to()),g.lat(nextEdge.from()),g.lat(nextEdge.to()));
+            direction = NavigationDirection.getDirection(curBearing,nextBearing);
+            way = nextEdge.getName();
+            distance = 0.0;
+        }
+        while(!routeQ.isEmpty()){
+            curVertex = nextVertex;
+            nextVertex = routeQ.remove();
+            curEdge = adjEdge.get(curVertex);
+            nextEdge = adjEdge.get(nextVertex);
+            distance+=curEdge.weight();
+            if(nextEdge == null){
+                NavigationDirection nd = Router.setNavDirection(direction,way,distance);
+                toReturn.add(nd);
+                return toReturn;
+            }
+            if(!curEdge.getName().equals(nextEdge.getName())){
+                double curBearing = NavigationDirection.bearing(g.lon(curEdge.from()),g.lon(curEdge.to()),g.lat(curEdge.from()),g.lat(curEdge.to()));
+                double nextBearing = NavigationDirection.bearing(g.lon(nextEdge.from()),g.lon(nextEdge.to()),g.lat(nextEdge.from()),g.lat(nextEdge.to()));
+                NavigationDirection nd = Router.setNavDirection(direction,way,distance);
+                toReturn.add(nd);
+                distance = 0.0;
+                way = nextEdge.getName();
+                direction = NavigationDirection.getDirection(curBearing,nextBearing);
+            }
+
+        }
+
+        // Actually, the code can never run to this position
+       // NavigationDirection nd = Router.setNavDirection(direction,way,distance);
+       // toReturn.add(nd);
+        return toReturn;
     }
+
+    private static Map<Long, WeightedEdge<Long>> getWays(AugmentedStreetMapGraph g,List<Long> route){
+        Map<Long, WeightedEdge<Long>> ways = new HashMap<>();
+        for(int i = 0;i<route.size()-1;i++){
+            long curVertex = route.get(i);
+            long nextVertex = route.get(i+1);
+            List<WeightedEdge<Long>> neighbors = g.neighbors(curVertex);
+            for(WeightedEdge<Long> neighbor:neighbors){
+                if(neighbor.to().equals(nextVertex)){
+                    ways.put(curVertex, neighbor);
+                }
+            }
+        }
+        return ways;
+
+
+    }
+
+
+    private static NavigationDirection setNavDirection(int direction, String way, double distance){
+        NavigationDirection nd = new NavigationDirection();
+        nd.direction = direction;
+        nd.way = way;
+        nd.distance = distance;
+        return nd;
+    }
+
+
 
     /**
      * Class to represent a navigation direction, which consists of 3 attributes:

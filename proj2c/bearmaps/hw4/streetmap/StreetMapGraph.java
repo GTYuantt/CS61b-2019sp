@@ -76,6 +76,7 @@ public class StreetMapGraph implements AStarGraph<Long> {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             SAXParser saxParser = factory.newSAXParser();
             GraphBuildingHandler gbh = new GraphBuildingHandler(smg);
+            //saxParser.parse(Thread.currentThread().getContextClassLoader().getResourceAsStream(filename), gbh);
             saxParser.parse(inputStream, gbh);
         } catch (ParserConfigurationException | SAXException | IOException e) {
             e.printStackTrace();

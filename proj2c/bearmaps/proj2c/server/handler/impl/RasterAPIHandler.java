@@ -17,8 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static bearmaps.proj2c.utils.Constants.SEMANTIC_STREET_GRAPH;
-import static bearmaps.proj2c.utils.Constants.ROUTE_LIST;
+import static bearmaps.proj2c.utils.Constants.*;
 
 /**
  * Handles requests from the web browser for map images. These images
@@ -84,13 +83,167 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      */
     @Override
     public Map<String, Object> processRequest(Map<String, Double> requestParams, Response response) {
-        //System.out.println("yo, wanna know the parameters given by the web browser? They are:");
-        //System.out.println(requestParams);
         Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
-                + "your browser.");
+        String[][] render_grid;
+        double raster_ul_lon; //upper-left-x
+        double raster_ul_lat; //upper-left-y
+        double raster_lr_lon; //lower-right-x
+        double raster_lr_lat; //lower-right-y
+        int depth;
+        boolean query_success = true;
+
+        double request_ul_lon = requestParams.get("ullon");
+        double request_ul_lat = requestParams.get("ullat");
+        double request_lr_lon = requestParams.get("lrlon");
+        double request_lr_lat = requestParams.get("lrlat");
+        double request_width = requestParams.get("w");
+        double request_height = requestParams.get("h");
+
+        if(Double.compare(request_lr_lat,ROOT_ULLAT)>0||
+            Double.compare(request_ul_lat,ROOT_LRLAT)<0||
+            Double.compare(request_lr_lon,ROOT_ULLON)<0||
+            Double.compare(request_ul_lon,ROOT_LRLON)>0){
+            query_success = false;
+        }
+        if(Double.compare(request_lr_lat,request_ul_lat) >= 0||
+            Double.compare(request_lr_lon,request_ul_lon) <= 0){
+            query_success = false;
+        }
+        results.put("query_success",query_success);
+
+
+
+        double requestLonDPP = Math.abs(request_lr_lon - request_ul_lon)/request_width;
+        depth = calcOptimalDepth(requestLonDPP);
+        results.put("depth", depth);
+
+
+        int raster_ul_lon_num = rasterULLonNum(request_ul_lon,depth);
+        raster_ul_lon = rasterULLon(raster_ul_lon_num,depth);
+        results.put("raster_ul_lon",raster_ul_lon);
+
+        int raster_ul_lat_num = rasterULLatNum(request_ul_lat,depth);
+        raster_ul_lat = rasterULLat(raster_ul_lat_num,depth);
+        results.put("raster_ul_lat",raster_ul_lat);
+
+        int raster_lr_lon_num = rasterLRLonNum(request_lr_lon,depth);
+        raster_lr_lon = rasterLRLon(raster_lr_lon_num,depth);
+        results.put("raster_lr_lon",raster_lr_lon);
+
+        int raster_lr_lat_num = rasterLRLatNum(request_lr_lat,depth);
+        raster_lr_lat = rasterLRLat(raster_lr_lat_num,depth);
+        results.put("raster_lr_lat",raster_lr_lat);
+
+
+        int colNum = (int) (Math.pow(2,depth)-raster_lr_lon_num-raster_ul_lon_num);
+        int rowNum = (int) (Math.pow(2,depth)-raster_lr_lat_num-raster_ul_lat_num);
+        render_grid = new String[rowNum][colNum];
+        for (int i = 0;i<rowNum;i++){
+            for (int j = 0;j<colNum;j++){
+                String img = "d"+depth+"_x"+(raster_ul_lon_num+j)+"_y"+(raster_ul_lat_num+i)+".png";
+                render_grid[i][j] = img;
+            }
+        }
+        results.put("render_grid",render_grid);
+        System.out.println(requestParams);
         return results;
     }
+
+    private int calcOptimalDepth(double requestLonDPP){
+        double baseLonDPP = (ROOT_LRLON - ROOT_ULLON)/TILE_SIZE;
+        double curLonDPP = baseLonDPP;
+        int depth = 0;
+        while (curLonDPP > requestLonDPP){
+            curLonDPP=curLonDPP/2;
+            depth+=1;
+        }
+        if(depth <= 7){
+            return depth;
+        }
+        return 7;
+    }
+
+    private int rasterULLonNum(double request_ullon,int depth){
+        int rasterULLonNum = 0;
+        double total = Math.abs(ROOT_LRLON-ROOT_ULLON);
+        double temp = total/Math.pow(2,depth);
+        while(ROOT_ULLON+temp*rasterULLonNum < request_ullon){
+            rasterULLonNum+=1;
+        }
+        rasterULLonNum-=1;
+        if(rasterULLonNum>=0){
+            return rasterULLonNum;
+        }
+        return 0;
+    }
+
+    private double rasterULLon(int rasterULLonNum,int depth){
+        double total = Math.abs(ROOT_LRLON-ROOT_ULLON);
+        double temp = total/Math.pow(2,depth);
+        return ROOT_ULLON+rasterULLonNum*temp;
+    }
+
+    private int rasterULLatNum(double request_ullat,int depth){
+        int rasterULLatNum = 0;
+        double total = Math.abs(ROOT_LRLAT-ROOT_ULLAT);
+        double temp = total/Math.pow(2,depth);
+        while(ROOT_ULLAT-temp*rasterULLatNum > request_ullat){
+            rasterULLatNum+=1;
+        }
+        rasterULLatNum-=1;
+        if(rasterULLatNum>=0){
+            return rasterULLatNum;
+        }
+        return 0;
+    }
+
+    private double rasterULLat(int rasterULLatNum,int depth){
+        double total = Math.abs(ROOT_LRLAT-ROOT_ULLAT);
+        double temp = total/Math.pow(2,depth);
+        return ROOT_ULLAT-rasterULLatNum*temp;
+    }
+
+    private int rasterLRLonNum(double request_lrlon,int depth){
+        int rasterLRLonNum = 0;
+        double total = Math.abs(ROOT_LRLON-ROOT_ULLON);
+        double temp = total/Math.pow(2,depth);
+        while(ROOT_LRLON-temp*rasterLRLonNum > request_lrlon){
+            rasterLRLonNum+=1;
+        }
+        rasterLRLonNum-=1;
+        if (rasterLRLonNum>=0){
+            return rasterLRLonNum;
+        }
+        return 0;
+    }
+
+    private double rasterLRLon(int rasterLRLonNum,int depth){
+        double total = Math.abs(ROOT_LRLON-ROOT_ULLON);
+        double temp = total/Math.pow(2,depth);
+        return ROOT_LRLON - rasterLRLonNum*temp;
+    }
+
+    private int rasterLRLatNum(double request_lrlat,int depth){
+        int rasterLRLatNum = 0;
+        double total = Math.abs(ROOT_LRLAT-ROOT_ULLAT);
+        double temp = total/Math.pow(2,depth);
+        while(ROOT_LRLAT+temp*rasterLRLatNum < request_lrlat){
+            rasterLRLatNum+=1;
+        }
+        rasterLRLatNum-=1;
+        if (rasterLRLatNum>=0){
+            return rasterLRLatNum;
+        }
+        return 0;
+    }
+
+    private double rasterLRLat(int rasterLRLatNum,int depth){
+        double total = Math.abs(ROOT_LRLAT-ROOT_ULLAT);
+        double temp = total/Math.pow(2,depth);
+        return ROOT_LRLAT + rasterLRLatNum*temp;
+    }
+
+
 
     @Override
     protected Object buildJsonResponse(Map<String, Object> result) {
@@ -206,7 +359,8 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         if (tileImg == null) {
             try {
                 File in = new File(imgPath);
-                tileImg = ImageIO.read(in);
+                  tileImg = ImageIO.read(in);
+                //tileImg = ImageIO.read(Thread.currentThread().getContextClassLoader().getResource(imgPath));
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
             }
